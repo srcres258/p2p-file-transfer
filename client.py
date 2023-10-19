@@ -4,7 +4,9 @@ import util
 import os
 import tqdm
 
-HOST = "localhost"
+#HOST = "203.135.101.243"
+#PORT = 54321
+HOST = "114.55.177.176"
 PORT = 11451
 FILE_DIR_LOC = "/home/srcres/Coding/Projects/p2p-file-transfer/receive"
 
@@ -60,7 +62,10 @@ def run_client():
                 case "received":
                     pass
                 case _:
-                    raise Exception("Unknown command from the server: {}. This should not happen.".format(cmd_tuple[0]))
+                    if len(cmd_tuple[0]) == 0:
+                        print("Warning: Received null command from the server. Is the network broken? Retrying.")
+                    else:
+                        raise Exception("Unknown command from the server: {}. This should not happen.".format(cmd_tuple[0]))
     finally:
         client_socket.close()
 
