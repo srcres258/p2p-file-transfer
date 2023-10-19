@@ -4,14 +4,12 @@ import util
 import os
 import tqdm
 
-#HOST = "203.135.101.243"
-#PORT = 54321
-HOST = "114.55.177.176"
+HOST = "localhost"
 PORT = 11451
 FILE_DIR_LOC = "/home/srcres/Coding/Projects/p2p-file-transfer/receive"
 
-def recv_command_safely(s: socket.socket) -> tuple:
-    cmd_tuple = util.recv_command(s)
+def recv_command_safely(s: socket.socket, file_data_recv_bytes_per_time: int) -> tuple:
+    cmd_tuple = util.recv_command(s, file_data_recv_bytes_per_time)
     util.send_command(s, "received")
     return cmd_tuple
 
@@ -27,8 +25,9 @@ def run_client():
         recv_f_path = ""
         recv_f_size = 0
         recv_f = None
+        recv_bytes_per_time = 0
         while running:
-            cmd_tuple = recv_command_safely(client_socket)
+            cmd_tuple = recv_command_safely(client_socket, recv_bytes_per_time)
             # print("Received command:", cmd_tuple[0])
             match cmd_tuple[0]:
                 case "mkdir":
@@ -47,6 +46,7 @@ def run_client():
                     recv_f_size = target_size
                     recv_f = open(target_path, "wb")
                     pbar = tqdm.tqdm(total=target_size)
+                    recv_bytes_per_time = cmd_tuple[3]
                     receiving = True
                 case "file_data":
                     recv_f.write(cmd_tuple[1])
@@ -55,6 +55,7 @@ def run_client():
                     print("Finished receiving a file from the server:", recv_f_path)
                     print("Total size (B):", recv_f_size)
                     print("Received size (B):", pbar.n)
+                    recv_bytes_per_time = 0
                     receiving = False
                 case "bye":
                     print("Finished the entire file transfer. Quitting...")

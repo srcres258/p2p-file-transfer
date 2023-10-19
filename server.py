@@ -48,7 +48,7 @@ def run_server():
                             print("Begin to transfer:", dirfile, end=' ')
                             print("(", i, "/", len(files), ")", sep='')
                             print("Size (B):", dirfile_size)
-                            send_command_safely(client_socket, "file_transfer_begin", dirfile[len(FILE_DIR_LOC):], dirfile_size)
+                            send_command_safely(client_socket, "file_transfer_begin", dirfile[len(FILE_DIR_LOC):], dirfile_size, BYTES_PER_TIME)
                             with open(dirfile, "rb") as f:
                                 with tqdm.tqdm(total=dirfile_size) as pbar:
                                         while True:
