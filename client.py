@@ -26,8 +26,9 @@ def run_client():
         recv_f_size = 0
         recv_f = None
         recv_bytes_per_time = 0
+        recv_remaining_bytes = 0
         while running:
-            cmd_tuple = recv_command_safely(client_socket, recv_bytes_per_time)
+            cmd_tuple = recv_command_safely(client_socket, min(recv_bytes_per_time, recv_remaining_bytes))
             # print("Received command:", cmd_tuple[0])
             match cmd_tuple[0]:
                 case "mkdir":
@@ -47,10 +48,12 @@ def run_client():
                     recv_f = open(target_path, "wb")
                     pbar = tqdm.tqdm(total=target_size)
                     recv_bytes_per_time = cmd_tuple[3]
+                    recv_remaining_bytes = recv_f_size
                     receiving = True
                 case "file_data":
                     recv_f.write(cmd_tuple[1])
                     pbar.update(len(cmd_tuple[1]))
+                    recv_remaining_bytes -= len(cmd_tuple[1])
                 case "file_transfer_end":
                     print("Finished receiving a file from the server:", recv_f_path)
                     print("Total size (B):", recv_f_size)

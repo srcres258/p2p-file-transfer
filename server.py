@@ -7,7 +7,7 @@ import tqdm
 HOST = "localhost"
 PORT = 11451
 FILE_DIR_LOC = "/opt/nvidia/" # Should end with a slash ('/' or '\')
-BYTES_PER_TIME = 1024 * 64 # 64 KB per time by default, can be adjusted on your own. Don't set it to a big number because it depends on Python's runtime memory.
+BYTES_PER_TIME = 1024 * 1024 * 2 # 2 MB per time by default, can be adjusted on your own. Don't set it to a big number because it depends on Python's runtime memory.
 
 class ExitingException(Exception):
     def __init__(self):
@@ -48,15 +48,19 @@ def run_server():
                             print("Begin to transfer:", dirfile, end=' ')
                             print("(", i, "/", len(files), ")", sep='')
                             print("Size (B):", dirfile_size)
-                            send_command_safely(client_socket, "file_transfer_begin", dirfile[len(FILE_DIR_LOC):], dirfile_size, BYTES_PER_TIME)
+                            bytes_per_time = min(BYTES_PER_TIME, dirfile_size)
+                            send_command_safely(client_socket, "file_transfer_begin", dirfile[len(FILE_DIR_LOC):], dirfile_size, bytes_per_time)
                             with open(dirfile, "rb") as f:
                                 with tqdm.tqdm(total=dirfile_size) as pbar:
-                                        while True:
-                                            fdata = f.read(BYTES_PER_TIME)
-                                            if len(fdata) == 0:
-                                                break
+                                        remaining_bytes = dirfile_size
+                                        bytes_to_send = bytes_per_time
+                                        while remaining_bytes > 0:
+                                            if remaining_bytes < bytes_to_send:
+                                                bytes_to_send = remaining_bytes
+                                            fdata = f.read(bytes_to_send)
                                             send_command_safely(client_socket, "file_data", fdata)
-                                            pbar.update(BYTES_PER_TIME)
+                                            pbar.update(bytes_to_send)
+                                            remaining_bytes -= bytes_to_send
                             send_command_safely(client_socket, "file_transfer_end")
                 except ExitingException as ex:
                     print(ex)

@@ -53,13 +53,22 @@ def send_str_utf8(s: socket.socket, st: str):
 def send_int_str_utf8(s: socket.socket, i: int):
     send_str_utf8(s, str(i))
 
+def __recv_data(s: socket.socket, length: int = 0) -> bytes:
+    result = b''
+    remaining = length
+    while remaining > 0:
+        data = s.recv(length)
+        result += data
+        remaining -= len(data)
+    return result
+
 def recv_data(s: socket.socket, len: int = 0) -> bytes:
     lendata = s.recv(8)
     if len > 0:
-        return s.recv(len)
+        return __recv_data(s, len)
     else:
         my_len = int.from_bytes(lendata, "big")
-        return s.recv(my_len)
+        return __recv_data(s, my_len)
 
 def recv_str_utf8(s: socket.socket) -> str:
     return recv_data(s).decode("utf-8")
